@@ -77,7 +77,7 @@ add_library(whatsapp ${LINK_MODE_MODULE}
 set_target_properties(whatsapp PROPERTIES PREFIX "")
 set_target_properties(whatsapp PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 
-target_link_libraries(whatsapp wireshark)
+target_link_libraries(whatsapp)
 
 install(TARGETS whatsapp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
