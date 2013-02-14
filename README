@@ -1,0 +1,6 @@
+This is a plugin to help with WhatsApp protocol dissection. The protocol is
+quite tricky and uses encryption, so at the moment the dissector is very basic.
+Checked it using real traces taken from the qemu android emulator. Used to develop
+a pidgin plugin for whatsapp successfully.
+
+Hope you like it ;)
