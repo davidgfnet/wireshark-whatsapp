@@ -14,11 +14,12 @@
 #define WHATSAPP_PORT_NEW 443
 
 const char * global_imei_whatsapp_1 = 0;
-const char * global_imei_whatsapp_2 = 0;
-const char * global_imei_whatsapp_3 = 0;
 const char * global_v2pw_whatsapp_1 = 0;
 const char * global_v2pw_whatsapp_2 = 0;
 const char * global_v2pw_whatsapp_3 = 0;
+const char * global_v2pw_whatsapp_4 = 0;
+const char * global_v2pw_whatsapp_5 = 0;
+const char * global_v2pw_whatsapp_6 = 0;
 const gboolean global_enable_decoding;
 int proto_whatsapp = -1;
 int message_whatsapp = -1;
@@ -224,14 +225,6 @@ void proto_register_whatsapp(void) {
 				 "Phone IMEI (1)",
 				 "Telephone IMEI to use as key",
 				 &global_imei_whatsapp_1);
-  prefs_register_string_preference(whatsapp_module, "imei2",
-				 "Phone IMEI (2)",
-				 "Telephone IMEI to use as key",
-				 &global_imei_whatsapp_2);
-  prefs_register_string_preference(whatsapp_module, "imei3",
-				 "Phone IMEI (3)",
-				 "Telephone IMEI to use as key",
-				 &global_imei_whatsapp_3);
   prefs_register_string_preference(whatsapp_module, "pw1",
 				 "v2 password (1)",
 				 "Base64 encoded password to use in v2 auth",
@@ -244,6 +237,18 @@ void proto_register_whatsapp(void) {
 				 "v2 password (3)",
 				 "Base64 encoded password to use in v2 auth",
 				 &global_v2pw_whatsapp_3);
+  prefs_register_string_preference(whatsapp_module, "pw4",
+				 "v2 password (4)",
+				 "Base64 encoded password to use in v2 auth",
+				 &global_v2pw_whatsapp_4);
+  prefs_register_string_preference(whatsapp_module, "pw5",
+				 "v2 password (5)",
+				 "Base64 encoded password to use in v2 auth",
+				 &global_v2pw_whatsapp_5);
+  prefs_register_string_preference(whatsapp_module, "pw6",
+				 "v2 password (6)",
+				 "Base64 encoded password to use in v2 auth",
+				 &global_v2pw_whatsapp_6);
   prefs_register_bool_preference(whatsapp_module, "enable_decoding",
 				 "Enable packet decoding",
 				 "Decodes network traffic if possible",

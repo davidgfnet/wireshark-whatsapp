@@ -697,15 +697,17 @@ bool DissectSession::tryKeys() {
 	if (check_key()) return true;
 	KeyGenerator::generateKeyImei(global_imei_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 	if (check_key()) return true;
-	KeyGenerator::generateKeyImei(global_imei_whatsapp_2,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-	if (check_key()) return true;
-	KeyGenerator::generateKeyImei(global_imei_whatsapp_3,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-	if (check_key()) return true;
 	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 	if (check_key()) return true;
 	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_2,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 	if (check_key()) return true;
 	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_3,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
+	if (check_key()) return true;
+	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_4,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
+	if (check_key()) return true;
+	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_5,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
+	if (check_key()) return true;
+	KeyGenerator::generateKeyV2(global_v2pw_whatsapp_6,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 	if (check_key()) return true;
 	return false;
 }

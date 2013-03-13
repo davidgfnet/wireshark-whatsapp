@@ -8,11 +8,12 @@
 
 
 extern const char * global_imei_whatsapp_1;
-extern const char * global_imei_whatsapp_2;
-extern const char * global_imei_whatsapp_3;
 extern const char * global_v2pw_whatsapp_1;
 extern const char * global_v2pw_whatsapp_2;
 extern const char * global_v2pw_whatsapp_3;
+extern const char * global_v2pw_whatsapp_4;
+extern const char * global_v2pw_whatsapp_5;
+extern const char * global_v2pw_whatsapp_6;
 extern gboolean global_enable_decoding;
 
 int whatsapp_data_length(const char * data, int len);
