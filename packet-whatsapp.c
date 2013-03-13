@@ -51,7 +51,7 @@ const value_string strings_list[];
 
 int whatsapp_msg = -1;
 
-#define MIN_PAKCET_SIZE 5
+#define MIN_PAKCET_SIZE 4
 
 
 static guint get_whatsapp_message_len(packet_info *pinfo, tvbuff_t *tvb, int offset)
