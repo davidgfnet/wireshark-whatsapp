@@ -145,13 +145,13 @@ void proto_register_whatsapp(void) {
     },
     { &hf_whatsapp_attr_key_enc,
         { "Key", "whatsapp.keyenc",
-          FT_UINT8, BASE_NONE,
+          FT_UINT8, BASE_DEC,
           VALS(strings_list), 0x0,
           NULL, HFILL },
     },
     { &hf_whatsapp_attr_val_enc,
         { "Value", "whatsapp.valueenc",
-          FT_UINT8, BASE_NONE,
+          FT_UINT8, BASE_DEC,
           VALS(strings_list), 0x0,
           NULL, HFILL },
     },
@@ -169,7 +169,7 @@ void proto_register_whatsapp(void) {
     },
     { &hf_whatsapp_tag_enc,
         { "Tag", "whatsapp.tagenc",
-          FT_UINT8, BASE_NONE,
+          FT_UINT8, BASE_DEC,
           VALS(strings_list), 0x0,
           NULL, HFILL },
     },
@@ -181,7 +181,7 @@ void proto_register_whatsapp(void) {
     },
     { &hf_whatsapp_nvalue_enc,
         { "Value", "whatsapp.nodevalueenc",
-          FT_UINT8, BASE_NONE,
+          FT_UINT8, BASE_DEC,
           VALS(strings_list), 0x0,
           NULL, HFILL },
     },
@@ -220,7 +220,8 @@ void proto_register_whatsapp(void) {
   proto_register_field_array (proto_whatsapp, hf_whatsapp, array_length (hf_whatsapp));
   proto_register_subtree_array (ett_whatsapp_arr, array_length (ett_whatsapp_arr));
   
-  struct pref_module * whatsapp_module = prefs_register_protocol(proto_whatsapp, proto_reg_handoff_whatsapp);
+  struct pref_module * whatsapp_module = 
+		(struct pref_module *)prefs_register_protocol(proto_whatsapp, proto_reg_handoff_whatsapp);
   prefs_register_string_preference(whatsapp_module, "imei1",
 				 "Phone IMEI (1)",
 				 "Telephone IMEI to use as key",
