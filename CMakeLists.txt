@@ -38,8 +38,8 @@ include_directories (${GLIB2_INCLUDE_DIRS})
 find_package(Wireshark)
 include_directories (${WIRESHARK_INCLUDE_DIRS})
 
-find_package(OpenSSL)
-include_directories (${OPENSSL_INCLUDE_DIR})
+find_package(Crypto)
+include_directories (${CRYPTO_INCLUDE_DIR})
 
 set(LINK_MODE_LIB SHARED)
 set(LINK_MODE_MODULE MODULE)
