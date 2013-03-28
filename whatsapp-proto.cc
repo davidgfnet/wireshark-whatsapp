@@ -168,6 +168,7 @@ public:
 	}
 	static void generateKeyMAC(const address * macaddr, const char * salt, int saltlen, char * out) {
 		unsigned char * ad = (unsigned char*)macaddr->data;
+		if (ad == NULL) return;
 		char fmt_addr[6*3*2];
 		for (int i = 0; i < 6; i++) {
 			fmt_addr[i*3+0] = hexmap2[ad[i]>>4];
