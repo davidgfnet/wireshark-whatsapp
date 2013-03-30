@@ -1,0 +1,109 @@
+==============================
+==============================
+     WhatsApp protocol
+==============================
+==============================
+
+Basic stream format
+
+WhatsApp protocol uses a TCP stream to send and
+receive all the information. Over this TCP stream
+it sends packets which contain the application 
+data. Those packets have a 3 byte header before
+the actual packet data.
+
+ Packet format
+
+ *************************************
+ * Flags * Packet size * Packet data *
+ *************************************
+ *  1b   *      2b     * 0 to 65536b *
+ *************************************
+
+ Field description:
+ 
+ Flags: Seems to be a bitfield. The first bit (the
+  MSB) is set when the server sends a crypted packet.
+  The fourth bit is set when the client sends a 
+  packet to the server which is crypted.
+  
+ Packet size: A network ordered 16 bit unsigned
+  integer which indicates the amount of information
+  following the header (thus not couting the header 
+  size).
+  
+ Packet data: The actual app data.
+ 
+If the packet is encrypted the first or last four
+bytes of the packet are used for HMAC-SHA1 checksum.
+If the packet is a client to server packet the four
+bytes are placed at the end of the data. If it's a
+server to client packet the four bytes are placed 
+in the four first positions. Therefore the minimum
+size for an encrypted packet should be four.
+ 
+ App data format
+
+The data sent and received by the protocol is 
+something similar to a XML. A tree of information
+with nodes, attributes, subchildrens and data.
+
+The basic format for an element is:
+
+ ************************************************************
+ * Element Size * Type * Tag * Attributes * Children / Data *
+ ************************************************************
+ *     2-3b     *  1b  *     *            *                 *
+ ************************************************************
+ 
+ Element size: Describes the length of the element 
+  in terms of the number of attributes and wether it
+  has data or children elements. The field is
+  calculated as the number of attributes mutiplied by
+  two and plus one. In case the element has children or
+  data another one is added.
+  
+ Type: Indicates the of element. If set to one 
+  indicates that is a starting element (usually
+  used at the start of communication). If set to
+  two indicates an empty element (not sure). Other 
+  values indicate a regular element.
+  
+ Tag: A string (or sequence of bytes) that indicate the
+  "name" of the element.
+  
+ Attributes: A sequence of (key,array) tuples consisting
+  in pairs of strings.
+  
+ Children: A list of elements which are considered to be
+  children of the current one. Those elements can have
+  children too creating a hierachical structure.
+  
+ Data: A string or sequence of bytes containing some data
+  for the element.
+
+ Encrytion
+ 
+The data sent by the client and/or the server may be
+encrypted. This is indicated by the flags bits.
+When negotiating the connection the to endpoints 
+establish a session key: a 20 byte key which is used
+both for encryption and authentication.
+
+The authentication is based on a challenge auth. The
+server sends an authentication request to the client
+which contains some bytes of random data. The client
+takes those bytes and combines them with the password
+of the account using PBKDF2. The resulting data is used
+for session key. As the server knows the password it can
+derive the session key too and they can start talking 
+using encrypted packets. The success of the auth will
+is determined when the client sends a packet which 
+contains the username (and some other data) encrypted
+with the session key. If the server is able to recover 
+the plaintext it means that both are using the same key.
+
+The encryption is done using a RC4 stream cipher.
+
+
+
