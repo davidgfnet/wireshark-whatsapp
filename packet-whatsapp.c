@@ -9,6 +9,7 @@
 
 #include <config.h>
 #include <epan/packet.h>
+#include <epan/prefs.h>
 
 #define WHATSAPP_PORT 5222
 #define WHATSAPP_PORT_NEW 443
