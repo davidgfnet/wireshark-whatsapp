@@ -29,6 +29,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 set(CMAKE_INSTALL_LIBDIR ~/.wireshark)
 
 INCLUDE(UseMakeDissectorReg)
+include(CMakeForceCompiler)
   
 set(GLIB2_MIN_VERSION 2.4.0)
 
@@ -85,4 +86,20 @@ target_link_libraries(whatsapp crypto)
 install(TARGETS whatsapp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
 )
+
+IF(DEFINED GNU_HOST)
+ CMAKE_FORCE_C_COMPILER(  ${GNU_HOST}-gcc GNU)
+ CMAKE_FORCE_CXX_COMPILER(${GNU_HOST}-g++ GNU)
+ set(CMAKE_STRIP "${GNU_HOST}-strip")
+ENDIF()
+
+IF(DEFINED STATIC_GCC_BUILD)
+ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+ENDIF()
+
+add_custom_command(TARGET whatsapp
+ POST_BUILD
+ COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded whatsapp.so
+)
+
 
