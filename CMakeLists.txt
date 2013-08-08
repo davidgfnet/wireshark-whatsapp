@@ -33,13 +33,25 @@ include(CMakeForceCompiler)
   
 set(GLIB2_MIN_VERSION 2.4.0)
 
+IF(NOT DEFINED ENV{GLIB2_INCLUDE_DIRS})
 find_package(GLIB2)
+ELSE()
+SET(GLIB2_INCLUDE_DIRS $ENV{GLIB2_INCLUDE_DIRS})
+ENDIF()
 include_directories (${GLIB2_INCLUDE_DIRS})
 
+IF(NOT DEFINED WIRESHARK_INCLUDE_DIRS)
 find_package(Wireshark)
+ELSE()
+SET(GLIB2_INCLUDE_DIRS $ENV{WIRESHARK_INCLUDE_DIRS})
+ENDIF()
 include_directories (${WIRESHARK_INCLUDE_DIRS})
 
+IF(NOT DEFINED CRYPTO_INCLUDE_DIR)
 find_package(Crypto)
+ELSE()
+SET(GLIB2_INCLUDE_DIRS $ENV{CRYPTO_INCLUDE_DIR})
+ENDIF()
 include_directories (${CRYPTO_INCLUDE_DIR})
 
 set(LINK_MODE_LIB SHARED)
@@ -81,7 +93,11 @@ add_library(whatsapp ${LINK_MODE_MODULE}
 set_target_properties(whatsapp PROPERTIES PREFIX "")
 set_target_properties(whatsapp PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 
+IF(DEFINED MANUAL_LINK)
+target_link_libraries(whatsapp)
+ELSE()
 target_link_libraries(whatsapp crypto)
+ENDIF()
 
 install(TARGETS whatsapp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
