@@ -666,6 +666,12 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 			
 			proto_item_append_text(hh, " (calculated: 0x%02x%02x%02x%02x)",
 						hmac[0],hmac[1],hmac[2],hmac[3]);
+						
+			proto_item_append_text(hh, " (session key: 0x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x %02x%02x%02x%02x%02x %02x%02x%02x%02x%02x )", 	session_key[0], session_key[1], session_key[2], session_key[3], session_key[4],
+				session_key[5], session_key[6], session_key[7], session_key[8], session_key[9],
+				session_key[10],session_key[11],session_key[12],session_key[13],session_key[14],
+				session_key[15],session_key[16],session_key[17],session_key[18],session_key[19]);
+
 		}
 	}
 
