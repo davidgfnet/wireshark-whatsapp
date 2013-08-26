@@ -1,0 +1,17 @@
+Source: wireshark-whatsapp
+Section: net
+Priority: optional
+Maintainer: David Guillen Fandos <david@davidgf.net>
+DM-Upload-Allowed: yes
+Build-Depends: debhelper (>= 7.0.50), libglib2.0-dev (>= 2.4.0), libwireshark-dev, libssl-dev, cmake (>= 2.6.0)
+Standards-Version: 3.8.4
+Homepage: https://github.com/davidgfnet/wireshark-whatsapp
+
+Package: wireshark-whatsapp
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libwireshark1, libssl1.0.0
+Description: WhatsApp plugin for Wireshark
+ This is a WhatsApp plugin for Wireshark and libwireshark. It allows to sniff
+ whatsapp network traffic and decode it (under certain conditions)
+
+
