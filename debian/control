@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: David Guillen Fandos <david@davidgf.net>
 DM-Upload-Allowed: yes
-Build-Depends: debhelper (>= 7.0.50), libglib2.0-dev (>= 2.4.0), libwireshark-dev, libssl-dev, cmake (>= 2.6.0)
+Build-Depends: debhelper (>= 7.0.50), libglib2.0-dev (>= 2.4.0), libwireshark-dev, libssl-dev, cmake (>= 2.6.0), libwiretap-dev
 Standards-Version: 3.8.4
 Homepage: https://github.com/davidgfnet/wireshark-whatsapp
 

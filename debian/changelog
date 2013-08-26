@@ -1,3 +1,9 @@
+wireshark-whatsapp (0.1-3) quantal; urgency=low
+
+  * Adding libwiretap as dependency for building package
+
+ -- David Guillen Fandos <david@davidgf.net>  Mon, 26 Aug 2013 16:50:00 +0200
+
 wireshark-whatsapp (0.1-2) quantal; urgency=low
 
   * Small packagin fix for Ubuntu
