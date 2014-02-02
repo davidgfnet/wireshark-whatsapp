@@ -33,19 +33,30 @@ extern int userserver_string;
 
 extern int hf_whatsapp_userserver;
 extern int hf_whatsapp_attribute;
-extern int hf_whatsapp_attr_key_enc;
+extern int hf_whatsapp_attr_key_enc_12;
+extern int hf_whatsapp_attr_val_enc_12;
+extern int hf_whatsapp_attr_key_enc_14;
+extern int hf_whatsapp_attr_val_enc_14;
+extern int hf_whatsapp_attr_key_enc_ext;
+extern int hf_whatsapp_attr_val_enc_ext;
 extern int hf_whatsapp_attr_key_plain;
-extern int hf_whatsapp_attr_val_enc;
 extern int hf_whatsapp_attr_val_plain;
-extern int hf_whatsapp_tag_enc;
+extern int hf_whatsapp_tag_enc_12;
+extern int hf_whatsapp_tag_enc_14;
+extern int hf_whatsapp_tag_enc_ext;
 extern int hf_whatsapp_tag_plain;
-extern int hf_whatsapp_nvalue_enc;
+extern int hf_whatsapp_nvalue_enc_12;
+extern int hf_whatsapp_nvalue_enc_14;
+extern int hf_whatsapp_nvalue_enc_ext;
 extern int hf_whatsapp_nvalue_plain;
 extern int hf_whatsapp_crypted_hmac_hash;
-
 extern int whatsapp_msg_crypted_message;
 extern int whatsapp_msg_crypted_payload;
 extern int whatsapp_msg;
 extern int proto_whatsapp;
+
+extern const value_string strings_list12[];
+extern const value_string strings_list14[];
+extern const value_string strings_list_ext[];
 
 
