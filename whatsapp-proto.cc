@@ -24,6 +24,10 @@ extern "C" {
 #include "whatsapp-proto.h"
 }
 
+const char * key_desc[4] = {
+	"Out key", "Out HMAC", "In key", "In HMAC"
+};
+
 std::string base64_decode(std::string const& encoded_string);
 
 class Tree; class DataBuffer; class KeyGenerator; class RC4Decoder;
@@ -754,11 +758,23 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 			proto_item_append_text(hh, " (calculated: 0x%02x%02x%02x%02x)",
 						hmac[0],hmac[1],hmac[2],hmac[3]);
 						
-			proto_item_append_text(hh, " (session key: 0x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x %02x%02x%02x%02x%02x %02x%02x%02x%02x%02x )", 	session_key[0], session_key[1], session_key[2], session_key[3], session_key[4],
-				session_key[5], session_key[6], session_key[7], session_key[8], session_key[9],
-				session_key[10],session_key[11],session_key[12],session_key[13],session_key[14],
-				session_key[15],session_key[16],session_key[17],session_key[18],session_key[19]);
-
+			if (wa_version == 14) {
+				proto_item_append_text(hh, " (session key: ");
+				for (int i = 0; i < 20; i++) {
+					if (i % 5 == 0)
+						proto_item_append_text(hh, "%s: ", key_desc[i/5]);
+					proto_item_append_text(hh, "%02x%02x%02x%02x ", 
+						session_key[i*4+0], session_key[i*4+1], session_key[i*4+2], session_key[i*4+3]
+					);
+				}
+			}else{
+				proto_item_append_text(hh, " (session key: 0x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x"
+					" %02x%02x%02x%02x%02x %02x%02x%02x%02x%02x )", 	
+					session_key[0], session_key[1], session_key[2], session_key[3], session_key[4],
+					session_key[5], session_key[6], session_key[7], session_key[8], session_key[9],
+					session_key[10],session_key[11],session_key[12],session_key[13],session_key[14],
+					session_key[15],session_key[16],session_key[17],session_key[18],session_key[19]);
+			}
 		}
 	}
 
