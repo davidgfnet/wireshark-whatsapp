@@ -69,7 +69,7 @@ int whatsapp_msg = -1;
 static guint get_whatsapp_message_len(packet_info *pinfo, tvbuff_t *tvb, int offset)
 {
   int length = tvb_length(tvb)-offset;
-  guint8* buffer = tvb_memdup(tvb, offset, length);
+  guint8* buffer = tvb_memdup(NULL, tvb, offset, length);
   int wa_len = whatsapp_data_length(buffer, length);
   g_free(buffer);
   return wa_len;
@@ -85,7 +85,7 @@ static void dissect_whatsapp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tr
     proto_tree * subtree = proto_item_add_subtree (ti, message_whatsapp);
 
     int length = tvb_length(tvb);
-    guint8* buffer = tvb_memdup(tvb, 0, length);
+    guint8* buffer = tvb_memdup(NULL, tvb, 0, length);
     whatsapp_data_dissect_tree(buffer, length, subtree, tvb, pinfo);
     g_free(buffer);
   }
