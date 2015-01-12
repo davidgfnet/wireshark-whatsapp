@@ -53,14 +53,14 @@ public:
 	Tree * read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *tvb,packet_info *pinfo);
 };
 
-enum EncodingManner { EncType12 = 0, EncType14, EncType14Ext, EncTypePlain };
+enum EncodingManner { EncType12 = 0, EncType14, EncType14Ext, EncType15, EncType15Ext, EncTypePlain };
 enum EncodingKind   { TokenTypeKey = 0, TokenTypeVal, TokenTypeTag, TokenTypeNValue };
 
-int * encoding_table[4][4] = {
-	{&hf_whatsapp_attr_key_enc_12, &hf_whatsapp_attr_key_enc_14, &hf_whatsapp_attr_key_enc_ext, &hf_whatsapp_attr_key_plain},
-	{&hf_whatsapp_attr_val_enc_12, &hf_whatsapp_attr_val_enc_14, &hf_whatsapp_attr_val_enc_ext, &hf_whatsapp_attr_val_plain},
-	{&hf_whatsapp_tag_enc_12, &hf_whatsapp_tag_enc_14, &hf_whatsapp_tag_enc_ext, &hf_whatsapp_tag_plain},
-	{&hf_whatsapp_nvalue_enc_12, &hf_whatsapp_nvalue_enc_14, &hf_whatsapp_nvalue_enc_ext, &hf_whatsapp_nvalue_plain}
+int * encoding_table[4][6] = {
+	{&hf_whatsapp_attr_key_enc_12, &hf_whatsapp_attr_key_enc_14, &hf_whatsapp_attr_key_enc_ext14, &hf_whatsapp_attr_key_enc_15, &hf_whatsapp_attr_key_enc_ext15, &hf_whatsapp_attr_key_plain},
+	{&hf_whatsapp_attr_val_enc_12, &hf_whatsapp_attr_val_enc_14, &hf_whatsapp_attr_val_enc_ext14, &hf_whatsapp_attr_val_enc_15, &hf_whatsapp_attr_val_enc_ext15, &hf_whatsapp_attr_val_plain},
+	{&hf_whatsapp_tag_enc_12, &hf_whatsapp_tag_enc_14, &hf_whatsapp_tag_enc_ext14, &hf_whatsapp_attr_key_enc_15, &hf_whatsapp_attr_key_enc_ext15, &hf_whatsapp_tag_plain},
+	{&hf_whatsapp_nvalue_enc_12, &hf_whatsapp_nvalue_enc_14, &hf_whatsapp_nvalue_enc_ext14, &hf_whatsapp_attr_key_enc_15, &hf_whatsapp_attr_key_enc_ext15, &hf_whatsapp_nvalue_plain}
 };
 
 
@@ -78,13 +78,6 @@ extern const value_string strings_list[];
 std::string getDecoded12(int n) {
 	return std::string(strings_list12[n].strptr);
 }
-std::string getDecoded14(int n) {
-	return std::string(strings_list14[n].strptr);
-}
-std::string getDecodedExt(int n) {
-	return std::string(strings_list_ext[n].strptr);
-}
-
 
 void HMAC_SHA1(const unsigned char *text, int text_len, const unsigned char *key, int key_len, unsigned char *digest) {
 	const int SHA1_BLOCK_SIZE = 64;
@@ -375,21 +368,33 @@ public:
 		popData(size);
 		return st;
 	}
-	std::string readString(proto_tree *tree, tvbuff_t *tvb, EncodingKind encoding) {
-		if (version == 12) return readString12(tree,tvb,encoding);
-		if (version == 14) return readString14(tree,tvb,encoding);
-		return "";
-	}
-	std::string readString12(proto_tree *tree, tvbuff_t *tvb, EncodingKind encoding) {
+
+	std::string readString(proto_tree *tree, tvbuff_t *tvb, EncodingKind encoding, int wa_version) {
 		if (blen == 0)
 			throw 0;
 		int type = readInt(1);
-		if (type > 4 and type < 0xf5) {
-			proto_tree_add_item (tree, *encoding_table[encoding][EncType12], tvb, curr()-1, 1, ENC_NA);
-			return getDecoded12(type);
+		// Version specific
+		int vn = (wa_version == 12) ? 0 : (wa_version == 14 ? 1 : 2);
+		const int max_reg_dict[]          = { 245, 236, 236 };
+		const EncodingManner enc[]        = { EncType12, EncType14, EncType15 };
+		const EncodingManner encext[]     = { EncType12, EncType14Ext, EncType15Ext };
+		const value_string * strlist[]    = { strings_list12, strings_list14, strings_list15 };
+		const value_string * strlistext[] = { 0, strings_list_ext14, strings_list_ext15 };
+
+		if (type > 2 and type < max_reg_dict[vn]) {
+			proto_tree_add_item (tree, *encoding_table[encoding][enc[vn]], tvb, curr()-1, 1, ENC_NA);
+			return std::string(strlist[vn][type].strptr);
 		}
 		else if (type == 0) {
 			return "";
+		}
+		else if (type == 236) {
+			// Extended Token
+			proto_tree_add_item (tree, *encoding_table[encoding][enc[vn]],    tvb, curr()-1, 1, ENC_NA);
+			proto_tree_add_item (tree, *encoding_table[encoding][encext[vn]], tvb, curr()  , 1, ENC_NA);
+			type = readInt(1);
+
+			return std::string(strlistext[vn][type].strptr);
 		}
 		else if (type == 0xfc) {
 			int slen = readInt(1);
@@ -402,7 +407,7 @@ public:
 			return readRawString(slen);
 		}
 		else if (type == 0xfe) {
-			return getDecoded12(readInt(1)+0xf5);
+		   return getDecoded12(readInt(1)+0xf5);
 		}
 		else if (type == 0xfa) {
 			proto_item * ti = 0; proto_tree * msg = 0; int ns = curr();
@@ -411,8 +416,8 @@ public:
 				msg = proto_item_add_subtree (ti, userserver_string);
 			}
 
-			std::string u = readString12(msg,tvb,encoding);
-			std::string s = readString12(msg,tvb,encoding);
+			std::string u = readString(msg,tvb,encoding, wa_version);
+			std::string s = readString(msg,tvb,encoding, wa_version);
 			
 			if (ti)
 				proto_item_set_len(ti,curr()-ns);
@@ -423,54 +428,23 @@ public:
 				return s;
 			return "";
 		}
-		return "";
-	}
-	std::string readString14(proto_tree *tree, tvbuff_t *tvb, EncodingKind encoding) {
-		if (blen == 0)
-			throw 0;
-		int type = readInt(1);
-		if (type > 2 and type < 236) {
-			proto_tree_add_item (tree, *encoding_table[encoding][EncType14], tvb, curr()-1, 1, ENC_NA);
-			return getDecoded14(type);
-		}
-		else if (type == 0) {
-			return "";
-		}
-		else if (type == 236) {
-			// Extended Token
-			proto_tree_add_item (tree, *encoding_table[encoding][EncType14],    tvb, curr()-1, 1, ENC_NA);
-			proto_tree_add_item (tree, *encoding_table[encoding][EncType14Ext], tvb, curr()  , 1, ENC_NA);
-			type = readInt(1);
-			return getDecodedExt(type);
-		}
-		else if (type == 0xfc) {
-			int slen = readInt(1);
-			proto_tree_add_item (tree, *encoding_table[encoding][EncTypePlain], tvb, curr(), slen, ENC_NA);
-			return readRawString(slen);
-		}
-		else if (type == 0xfd) {
-			int slen = readInt(3);
-			proto_tree_add_item (tree, *encoding_table[encoding][EncTypePlain], tvb, curr(), slen, ENC_NA);
-			return readRawString(slen);
-		}
-		else if (type == 0xfa) {
-			proto_item * ti = 0; proto_tree * msg = 0; int ns = curr();
-			if (tree != 0) {
-				ti = proto_tree_add_item (tree, hf_whatsapp_userserver, tvb, curr(), 0, ENC_NA);
-				msg = proto_item_add_subtree (ti, userserver_string);
+		else if (type == 0xff) {
+			// Some sort of number encoding (using 4 bit)
+			int nbyte = readInt(1);
+			int size = nbyte & 0x7f;
+			int numnibbles = size*2 - ((nbyte&0x80) ? 1 : 0);
+
+			proto_tree_add_item (tree, hf_whatsapp_nibble_enc15, tvb, curr()-2, size+2, ENC_NA);
+
+			std::string rawd = readRawString(size);
+			std::string s;
+			for (int i = 0; i < numnibbles; i++) {
+				char c = (rawd[i/2] >> (4-((i&1)<<2))) & 0xF;
+				if (c < 10) s += (c+'0');
+				else s += (c-10+'-');
 			}
 
-			std::string u = readString14(msg,tvb,encoding);
-			std::string s = readString14(msg,tvb,encoding);
-			
-			if (ti)
-				proto_item_set_len(ti,curr()-ns);
-			
-			if (u.size() > 0 and s.size() > 0)
-				return u + "@" + s;
-			else if (s.size() > 0)
-				return s;
-			return "";
+			return s;
 		}
 		return "";
 	}
@@ -505,7 +479,7 @@ public:
 	void setTag(std::string tag) {
 		this->tag = tag;
 	}
-	void readAttributes(DataBuffer * data, int size, proto_tree *tree = 0, tvbuff_t *tvb = 0) {
+	void readAttributes(DataBuffer * data, int size, proto_tree *tree, tvbuff_t *tvb, int wa_version) {
 		int count = (size - 2 + (size % 2)) / 2;
 		while (count--) {
 			proto_item * ti; proto_tree * msg = 0; int ns = data->curr();
@@ -514,8 +488,8 @@ public:
 				msg = proto_item_add_subtree (ti, tree_whatsapp);
 			}
 
-			std::string key   = data->readString(msg,tvb,TokenTypeKey);
-			std::string value = data->readString(msg,tvb,TokenTypeVal);
+			std::string key   = data->readString(msg,tvb,TokenTypeKey,wa_version);
+			std::string value = data->readString(msg,tvb,TokenTypeVal,wa_version);
 			
 			if (ti)
 				proto_item_set_len(ti,data->curr()-ns);
@@ -605,12 +579,12 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 				decoded_data->getHMAC(hmac);
 			}else{
 				unsigned char * skey = &session_key[0];
-				if (wa_version == 14) {
+				if (wa_version == 14 || wa_version == 15) {
 					skey = dataout ? &session_key[20*1] : &session_key[20*3];
 				}
 				
 				KeyGenerator::calc_hmac((unsigned char*)data->getPtr(),bsize,skey,dataout,hmac,0);
-				decoded_data = data->decodedBuffer(decoder,bsize,dataout || wa_version == 14);
+				decoded_data = data->decodedBuffer(decoder,bsize,dataout || wa_version == 14 || wa_version == 15);
 				decoded_data->setHMAC(hmac);
 				(*blist)[packet_hmac] = new DataBuffer(decoded_data);
 			}
@@ -627,7 +601,7 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 				msg = proto_item_add_subtree (ti, message_whatsapp);
 			
 				proto_item * hh;
-				if (dataout || wa_version == 14) {
+				if (dataout || wa_version == 14 || wa_version == 15) {
 					hh = proto_tree_add_item (msg,hf_whatsapp_crypted_hmac_hash,
 										decoded_tvb, bsize-4, 4, ENC_BIG_ENDIAN);
 					ti = proto_tree_add_item (msg, whatsapp_msg_crypted_message,
@@ -670,7 +644,7 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 	if (type == 1) {
 		data->popData(1);
 		Tree * t = new Tree();
-		t->readAttributes(data,lsize,msg,tvb);
+		t->readAttributes(data,lsize,msg,tvb,wa_version);
 		t->setTag("start");
 		proto_item_set_len(ti,data->curr()-nstart);
 		return t;
@@ -679,9 +653,9 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 		proto_item_set_len(ti,data->curr()-nstart);
 		return NULL; // No data in this tree...
 	}
-	std::string tag = data->readString(msg,tvb,TokenTypeTag);
+	std::string tag = data->readString(msg,tvb,TokenTypeTag, wa_version);
 	Tree * t = new Tree();
-	t->readAttributes(data,lsize,msg,tvb);
+	t->readAttributes(data,lsize,msg,tvb,wa_version);
 	t->setTag(tag);
 	if ((lsize & 1) == 1) {
 		proto_item_set_len(ti,data->curr()-nstart);
@@ -694,7 +668,7 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 		return t;
 	}
 	int dstart = data->curr();
-	t->setData(data->readString(msg,tvb,TokenTypeNValue));
+	t->setData(data->readString(msg,tvb,TokenTypeNValue, wa_version));
 	proto_item_set_len(ti,data->curr()-nstart);
 
 	// Check for challenge send
@@ -711,12 +685,12 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 			found_auth = this->tryKeys();  // Try keys and find a good one
 			unsigned char * in_key  = session_key;
 			unsigned char * out_key = session_key;
-			if (wa_version == 14) {
+			if (wa_version == 14 || wa_version == 15) {
 				in_key  = &session_key[20*2];
 				out_key = &session_key[20*0];
 			}
-			in = new RC4Decoder (in_key,  20, wa_version == 14 ? 768 : 256, wa_version == 14);
-			out = new RC4Decoder(out_key, 20, wa_version == 14 ? 768 : 256, wa_version == 14);
+			in = new RC4Decoder (in_key,  20, wa_version >= 14 ? 768 : 256, wa_version >= 14);
+			out = new RC4Decoder(out_key, 20, wa_version >= 14 ? 768 : 256, wa_version >= 14);
 		}
 
 		// Decode the response data, to train the decoder
@@ -730,7 +704,7 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 			bool dataout = ADDRESSES_EQUAL(&server_addr,&pinfo->dst);
 			
 			unsigned char * skey = &session_key[0];
-			if (wa_version == 14) {
+			if (wa_version == 14 || wa_version == 15) {
 				skey = dataout ? &session_key[20*1] : &session_key[20*3];
 			}
 
@@ -758,7 +732,7 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 			proto_item_append_text(hh, " (calculated: 0x%02x%02x%02x%02x)",
 						hmac[0],hmac[1],hmac[2],hmac[3]);
 						
-			if (wa_version == 14) {
+			if (wa_version == 14 || wa_version == 15) {
 				proto_item_append_text(hh, " (session key: ");
 				for (int i = 0; i < 20; i++) {
 					if (i % 5 == 0)
@@ -789,7 +763,7 @@ bool DissectSession::check_key() {
 		
 	// Decode the data
 	std::string decoded = challenge_response.substr(4);
-	RC4Decoder dec(session_key, 20, wa_version == 14 ? 768 : 256, wa_version == 14);
+	RC4Decoder dec(session_key, 20, wa_version >= 14 ? 768 : 256, wa_version >= 14);
 	dec.cipher((unsigned char*)decoded.c_str(),decoded.size());
 		
 	for (int i = 0; i < decoded.size()-challenge_data.size()+1; i++) {
