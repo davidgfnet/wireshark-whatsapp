@@ -65,6 +65,7 @@ set(LINK_MODE_MODULE MODULE)
 set(DISSECTOR_SRC
 	packet-whatsapp.c
 	whatsapp-proto.cc
+	tinfl.c
 )
 
 set(PLUGIN_FILES

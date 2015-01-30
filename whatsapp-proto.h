@@ -25,11 +25,13 @@ extern int hf_whatsapp_nodesize16;
 extern int hf_whatsapp_attr_key;
 extern int hf_whatsapp_attr_val;
 extern int hf_whatsapp_attr_crypted;
+extern int hf_whatsapp_attr_compressed;
 extern int hf_whatsapp_attr_flags;
 extern int hf_whatsapp_message;
 extern int message_whatsapp;
 extern int tree_whatsapp;
 extern int userserver_string;
+extern int tree_msg_flags;
 
 extern int hf_whatsapp_userserver;
 extern int hf_whatsapp_attribute;
@@ -61,6 +63,7 @@ extern int hf_whatsapp_nvalue_plain;
 extern int hf_whatsapp_crypted_hmac_hash;
 extern int whatsapp_msg_crypted_message;
 extern int whatsapp_msg_crypted_payload;
+extern int whatsapp_msg_compressed_message;
 extern int whatsapp_msg;
 extern int proto_whatsapp;
 

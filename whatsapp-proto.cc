@@ -28,6 +28,10 @@ const char * key_desc[4] = {
 	"Out key", "Out HMAC", "In key", "In HMAC"
 };
 
+extern "C" {
+	size_t tinfl_decompress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
+}
+
 std::string base64_decode(std::string const& encoded_string);
 
 class Tree; class DataBuffer; class KeyGenerator; class RC4Decoder;
@@ -40,6 +44,7 @@ private:
 	unsigned char session_key[20*4];  // V12 session | V14 session keys (4)
 	std::string challenge_data, challenge_response;
 	std::map < unsigned int, DataBuffer* > * blist;
+	std::map < unsigned int, DataBuffer* > * dlist;
 	bool found_auth;
 	unsigned int wa_version;
 
@@ -247,8 +252,9 @@ private:
 	unsigned char * buffer;
 	int blen, skip;
 	unsigned char hmac[4];
-	int version;
 public:
+	int version;
+
 	DataBuffer (const void * ptr, int size, int v) {
 		if (ptr != NULL and size > 0) {
 			buffer = (unsigned char*)malloc(size);
@@ -434,7 +440,7 @@ public:
 			int size = nbyte & 0x7f;
 			int numnibbles = size*2 - ((nbyte&0x80) ? 1 : 0);
 
-			proto_tree_add_item (tree, hf_whatsapp_nibble_enc15, tvb, curr()-2, size+2, ENC_NA);
+			proto_item * hh = proto_tree_add_item (tree, hf_whatsapp_nibble_enc15, tvb, curr()-2, size+2, ENC_NA);
 
 			std::string rawd = readRawString(size);
 			std::string s;
@@ -443,6 +449,8 @@ public:
 				if (c < 10) s += (c+'0');
 				else s += (c-10+'-');
 			}
+
+			proto_item_append_text(hh, " (%s)", s.c_str());
 
 			return s;
 		}
@@ -512,6 +520,7 @@ DissectSession::DissectSession (const char * data, int len, proto_tree *tree, tv
 	found_auth = false;
 	in = 0; out = 0;
 	this->blist = new std::map < unsigned int, DataBuffer* >();
+	this->dlist = new std::map < unsigned int, DataBuffer* >();
 }
 	
 int DissectSession::dissect(const char * data, int len, proto_tree *tree, tvbuff_t *tvb,packet_info *pinfo) {
@@ -557,8 +566,11 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 		ti = proto_tree_add_item (tree, whatsapp_msg, tvb, data->curr(), bsize+3, ENC_NA);
 		msg = proto_item_add_subtree (ti, message_whatsapp);
 		proto_tree_add_item (msg, hf_whatsapp_message, tvb, data->curr()+1, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item (msg, hf_whatsapp_attr_flags, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
-		proto_tree_add_item (msg, hf_whatsapp_attr_crypted, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
+		ti = proto_tree_add_item (msg, hf_whatsapp_attr_flags, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
+
+		proto_tree * msgf = proto_item_add_subtree(ti, tree_msg_flags);
+		proto_tree_add_boolean (msgf, hf_whatsapp_attr_crypted, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
+		proto_tree_add_boolean (msgf, hf_whatsapp_attr_compressed, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
 	}
 
 	data->popData(3);	
@@ -617,6 +629,35 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 										hmac[0],hmac[1],hmac[2],hmac[3]);
 			
 				msg = proto_item_add_subtree (ti, message_whatsapp);
+			}
+
+			if (bflag & 4) {
+				DataBuffer * decomp_data;
+				if (dlist->find(packet_hmac) != dlist->end()) {
+					decomp_data = new DataBuffer((*dlist)[packet_hmac]);
+				}else{
+					// Deflate data
+					int osize = decoded_data->size()*2+64;
+					char tmpbuf[osize];
+					size_t r = tinfl_decompress_mem_to_mem(tmpbuf, osize, decoded_data->getPtr(), decoded_data->size(), 1);
+
+					decomp_data = new DataBuffer(tmpbuf, r, decoded_data->version);
+					(*dlist)[packet_hmac] = new DataBuffer(decomp_data);
+				}
+
+				guint8* decompressed_buffer = (guint8*)g_malloc(decomp_data->size());
+				memcpy(decompressed_buffer,decomp_data->getPtr(),decomp_data->size());
+				tvbuff_t * decomp_tvb = tvb_new_child_real_data(decoded_tvb, decompressed_buffer, decomp_data->size(), decomp_data->size());
+				tvb_set_free_cb(decomp_tvb, g_free);
+				add_new_data_source(pinfo, decomp_tvb, "Decompressed data");
+
+				ti = proto_tree_add_item (msg, whatsapp_msg_compressed_message,
+									decomp_tvb, 0, decomp_data->size(), ENC_NA);
+				msg = proto_item_add_subtree (ti, message_whatsapp);
+
+				// Call recursive
+				data->popData(bsize);     // Pop data for next parsing!
+				return read_tree(decomp_data,msg,decomp_tvb,pinfo);
 			}
 		
 			// Call recursive

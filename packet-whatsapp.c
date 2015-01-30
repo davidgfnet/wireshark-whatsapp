@@ -26,9 +26,11 @@ int proto_whatsapp = -1;
 int message_whatsapp = -1;
 int userserver_string = -1;
 int tree_whatsapp = -1;
+int tree_msg_flags = -1;
 static gint ett_whatsapp = -1;
 int whatsapp_msg_crypted_payload = -1;
 int whatsapp_msg_crypted_message = -1;
+int whatsapp_msg_compressed_message = -1;
 
 /* Variables for whatsapp packets */
 int hf_whatsapp_message = -1;
@@ -48,6 +50,7 @@ int hf_whatsapp_attr_val_enc_ext15 = -1;
 int hf_whatsapp_attr_key_plain = -1;
 int hf_whatsapp_attr_val_plain = -1;
 int hf_whatsapp_attr_crypted = -1;
+int hf_whatsapp_attr_compressed = -1;
 int hf_whatsapp_attr_flags = -1;
 int hf_whatsapp_attribute = -1;
 int hf_whatsapp_tag_enc_12 = -1;
@@ -129,6 +132,13 @@ void proto_register_whatsapp(void) {
           NULL, 0x0,
           NULL, HFILL },
     },
+    { &whatsapp_msg_compressed_message,
+        { "Crypted message", "whatsapp.compressed_message",
+          FT_NONE, BASE_NONE,
+          NULL, 0x0,
+          NULL, HFILL },
+    },
+
     { &hf_whatsapp_message,
         { "Message size", "whatsapp.message",
           FT_UINT16, BASE_DEC,
@@ -328,8 +338,14 @@ void proto_register_whatsapp(void) {
     },
     { &hf_whatsapp_attr_crypted,
         { "Crypted", "whatsapp.crypted",
-          FT_BOOLEAN, BASE_NONE,
+          FT_BOOLEAN, 8,
           NULL, 0x80,
+          NULL, HFILL },
+    },
+    { &hf_whatsapp_attr_compressed,
+        { "Compressed", "whatsapp.compressed",
+          FT_BOOLEAN, 8,
+          NULL, 0x40,
           NULL, HFILL },
     },
     { &hf_whatsapp_crypted_hmac_hash,
@@ -342,7 +358,8 @@ void proto_register_whatsapp(void) {
   static gint *ett_whatsapp_arr[] = { /* protocol subtree array */
     &message_whatsapp,
     &tree_whatsapp,
-    &userserver_string
+    &userserver_string,
+	&tree_msg_flags
   };
   proto_whatsapp = proto_register_protocol(
     "WhatsApp XMPP protocol", "WhatsApp", "whatsapp");
