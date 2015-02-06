@@ -59,7 +59,7 @@ elif registertype == "dissectors":
  */
 """
 else:
-	print("Unknown output type '%s'",registertype)
+	#print("Unknown output type '%s'",registertype)
 	sys.exit(1)
 
 
@@ -77,7 +77,7 @@ for file in files:
 		filenames.append(os.path.join(srcdir, file))
 
 if len(filenames) < 1:
-	print("No files found")
+	#print("No files found")
 	sys.exit(1)
 
 
@@ -165,7 +165,7 @@ if cache is not None and cache_filename is not None:
 
 # Make sure we actually processed something
 if len(regs['proto_reg']) < 1:
-	print("No protocol registrations found")
+	#print("No protocol registrations found")
 	sys.exit(1)
 
 # Sort the lists to make them pretty
