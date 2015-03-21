@@ -89,10 +89,11 @@ static guint get_whatsapp_message_len(packet_info *pinfo, tvbuff_t *tvb, int off
   return wa_len;
 }
 
-static void dissect_whatsapp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+static int dissect_whatsapp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
   col_set_str (pinfo-> cinfo, COL_PROTOCOL, "WhatsApp XMPP protocol packet");
   col_clear (pinfo->cinfo, COL_INFO);
+  int r = 0;
 
   if (tree) {
     proto_item *ti = proto_tree_add_item (tree, proto_whatsapp, tvb, 0,-1, ENC_NA);
@@ -100,15 +101,16 @@ static void dissect_whatsapp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
     int length = tvb_length(tvb);
     guint8* buffer = tvb_memdup(NULL, tvb, 0, length);
-    whatsapp_data_dissect_tree(buffer, length, subtree, tvb, pinfo);
+    r = whatsapp_data_dissect_tree(buffer, length, subtree, tvb, pinfo);
     g_free(buffer);
   }
-  return; // tvb_length(tvb);
+  return r;
 }
 
 static int dissect_whatsapp (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void * u) {
   tcp_dissect_pdus(tvb, pinfo, tree, TRUE, MIN_PAKCET_SIZE,
                      get_whatsapp_message_len, dissect_whatsapp_message);
+  return get_whatsapp_message_len(pinfo, tvb, 0);
 }
 void proto_reg_handoff_whatsapp(void);
 

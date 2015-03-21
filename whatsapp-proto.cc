@@ -524,6 +524,7 @@ DissectSession::DissectSession (const char * data, int len, proto_tree *tree, tv
 }
 	
 int DissectSession::dissect(const char * data, int len, proto_tree *tree, tvbuff_t *tvb,packet_info *pinfo) {
+	int rlen = 0;
 	try {
 		DataBuffer * d = new DataBuffer(data,len,wa_version);
 	
@@ -547,11 +548,12 @@ int DissectSession::dissect(const char * data, int len, proto_tree *tree, tvbuff
 			if (t != NULL) delete t;
 		} while (t != NULL and d->size() >= 3);
 
+		rlen = len - d->size();
 		delete d;
 	}catch (int n) {
 		return 0;
 	}
-	return 0;
+	return rlen;
 }
 
 Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *tvb,packet_info *pinfo) {
