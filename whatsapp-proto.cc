@@ -45,6 +45,7 @@ private:
 	std::string challenge_data, challenge_response;
 	std::map < unsigned int, DataBuffer* > * blist;
 	std::map < unsigned int, DataBuffer* > * dlist;
+	std::string userphone;
 	bool found_auth;
 	unsigned int wa_version;
 
@@ -362,7 +363,8 @@ public:
 		}
 		else {
 			// FIXME throw 0 error
-			printf("Parse error!!\n");
+			printf("Parse error! %d\n", (int)buffer[0]);
+			return 0;
 		}
 		return ret;
 	}
@@ -513,6 +515,12 @@ public:
 	}
 	void setChildren(std::vector < Tree* > c) {
 		children = c;
+	}
+	std::string getAttr(const std::string & key) const {
+		if (attributes.find(key) != attributes.end()) {
+			return attributes.at("user");
+		}
+		return "";
 	}
 };
 
@@ -700,6 +708,11 @@ Tree * DissectSession::read_tree(DataBuffer * data, proto_tree *tree, tvbuff_t *
 	Tree * t = new Tree();
 	t->readAttributes(data,lsize,msg,tvb,wa_version);
 	t->setTag(tag);
+
+	// Look for the phone number
+	if (tag == "auth")
+		userphone = t->getAttr("user");
+
 	if ((lsize & 1) == 1) {
 		proto_item_set_len(ti,data->curr()-nstart);
 		return t;
@@ -821,37 +834,31 @@ bool DissectSession::check_key() {
 // Try to guess the session key
 // We use the 3 IMEIs and the SRC MAC ADDR (iPhone)
 bool DissectSession::tryKeys() {
-	KeyGenerator::generateKeyMAC (&client_mac,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-	if (check_key()) return true;
-	KeyGenerator::generateKeyImei(global_imei_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-	if (check_key()) return true;
-	
-	if (wa_version == 12) {
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
+	char * pass  = NULL;
+	int i;
+	for (i = 0; i < wa_userpass_uats_num; i++) {
+		if (strcmp(wa_userpass_uats[i].username, userphone.c_str()) == 0) {
+			pass = wa_userpass_uats[i].password;
+			break;
+		}
+	}
+
+	if (wa_version < 12) {
+		KeyGenerator::generateKeyMAC (&client_mac,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 		if (check_key()) return true;
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_2,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
+		KeyGenerator::generateKeyImei(global_imei_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
 		if (check_key()) return true;
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_3,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_4,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_5,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV2(global_v2pw_whatsapp_6,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;	
+	}
+	else if (wa_version == 12) {
+		if (pass) {
+			KeyGenerator::generateKeyV2(pass, challenge_data.c_str(), challenge_data.size(), (char*)session_key);
+			return true;
+		}
 	}else{
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_1,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_2,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_3,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_4,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_5,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;
-		KeyGenerator::generateKeyV14(global_v2pw_whatsapp_6,challenge_data.c_str(),challenge_data.size(),(char*)session_key);
-		if (check_key()) return true;	
+		if (pass) {
+			KeyGenerator::generateKeyV14(pass, challenge_data.c_str(), challenge_data.size(), (char*)session_key);
+			return true;
+		}
 	}
 	return false;
 }

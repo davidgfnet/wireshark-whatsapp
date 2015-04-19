@@ -8,13 +8,15 @@
 
 
 extern const char * global_imei_whatsapp_1;
-extern const char * global_v2pw_whatsapp_1;
-extern const char * global_v2pw_whatsapp_2;
-extern const char * global_v2pw_whatsapp_3;
-extern const char * global_v2pw_whatsapp_4;
-extern const char * global_v2pw_whatsapp_5;
-extern const char * global_v2pw_whatsapp_6;
 extern gboolean global_enable_decoding;
+
+typedef struct _wa_userpass_t {
+    char* username;
+    char* password;
+} wa_userpass_t;
+extern wa_userpass_t * wa_userpass_uats;
+extern guint wa_userpass_uats_num;
+
 
 int whatsapp_data_length(const char * data, int len);
 int whatsapp_data_dissect_tree(const char * data, int len, proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo);

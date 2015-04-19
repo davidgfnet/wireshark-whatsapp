@@ -10,17 +10,12 @@
 #include <config.h>
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/uat.h>
 
 #define WHATSAPP_PORT 5222
 #define WHATSAPP_PORT_NEW 443
 
 const char * global_imei_whatsapp_1 = 0;
-const char * global_v2pw_whatsapp_1 = 0;
-const char * global_v2pw_whatsapp_2 = 0;
-const char * global_v2pw_whatsapp_3 = 0;
-const char * global_v2pw_whatsapp_4 = 0;
-const char * global_v2pw_whatsapp_5 = 0;
-const char * global_v2pw_whatsapp_6 = 0;
 gboolean global_enable_decoding;
 int proto_whatsapp = -1;
 int message_whatsapp = -1;
@@ -79,6 +74,37 @@ int whatsapp_msg = -1;
 
 #define MIN_PAKCET_SIZE 4
 
+typedef struct _wa_userpass_t {
+    char* username;
+    char* password;
+} wa_userpass_t;
+
+wa_userpass_t * wa_userpass_uats = NULL;
+guint wa_userpass_uats_num = 0;
+
+UAT_CSTRING_CB_DEF(wa_userpass_uats,username,wa_userpass_t)
+UAT_CSTRING_CB_DEF(wa_userpass_uats,password,wa_userpass_t)
+
+static uat_t * wa_userpass_uat = NULL;
+
+void waup_free_cb(void* r) {
+  wa_userpass_t* h = (wa_userpass_t*)r;
+
+  g_free(h->username);
+  g_free(h->password);
+}
+void * waup_copy_cb(void* dest, const void* orig, size_t len _U_) {
+  const wa_userpass_t* o = (const wa_userpass_t*)orig;
+  wa_userpass_t*       d = (wa_userpass_t*)dest;
+
+  d->username = g_strdup(o->username);
+  d->password = g_strdup(o->password);
+  return d;
+}
+
+gboolean fld_chk_cb(void* r _U_, const char* p, guint len _U_, const void* u1 _U_, const void* u2 _U_, const char ** err) {
+  return TRUE;
+}
 
 static guint get_whatsapp_message_len(packet_info *pinfo, tvbuff_t *tvb, int offset)
 {
@@ -374,30 +400,32 @@ void proto_register_whatsapp(void) {
 				 "Phone IMEI (1)",
 				 "Telephone IMEI to use as key",
 				 &global_imei_whatsapp_1);
-  prefs_register_string_preference(whatsapp_module, "pw1",
-				 "v2 password (1)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_1);
-  prefs_register_string_preference(whatsapp_module, "pw2",
-				 "v2 password (2)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_2);
-  prefs_register_string_preference(whatsapp_module, "pw3",
-				 "v2 password (3)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_3);
-  prefs_register_string_preference(whatsapp_module, "pw4",
-				 "v2 password (4)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_4);
-  prefs_register_string_preference(whatsapp_module, "pw5",
-				 "v2 password (5)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_5);
-  prefs_register_string_preference(whatsapp_module, "pw6",
-				 "v2 password (6)",
-				 "Base64 encoded password to use in v2 auth",
-				 &global_v2pw_whatsapp_6);
+
+  static uat_field_t wa_auth_uats_flds[] = {
+    UAT_FLD_CSTRING_OTHER(wa_userpass_uats, username, "Phone",    fld_chk_cb, "Whatapp phone number username"),
+    UAT_FLD_CSTRING_OTHER(wa_userpass_uats, password, "Password", fld_chk_cb, "Whatapp account password (base64 encoded)"),
+    UAT_END_FIELDS
+  };
+
+  wa_userpass_uat = uat_new("WhatsApp accounts",
+                            sizeof(wa_userpass_t),
+                            "wauserpasstable",              /* filename */
+                            TRUE,                           /* from_profile */
+                            &wa_userpass_uats,              /* data_ptr */
+                            &wa_userpass_uats_num,          /* numitems_ptr */
+                            UAT_AFFECTS_DISSECTION,         /* affects dissection of packets, but not set of named fields */
+                            "WAUSERPASS_DOC",
+                            waup_copy_cb,
+                            NULL,
+                            waup_free_cb,
+                            NULL,
+                            wa_auth_uats_flds);
+
+  prefs_register_uat_preference(whatsapp_module, "cfg",
+                                  "Whatsapp user/pass list",
+                                  "A table for phones and passwords to decrypt conversations",
+                                  wa_userpass_uat);
+
   prefs_register_bool_preference(whatsapp_module, "enable_decoding",
 				 "Enable packet decoding",
 				 "Decodes network traffic if possible",
