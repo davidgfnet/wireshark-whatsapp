@@ -51,6 +51,10 @@ SET(GLIB2_INCLUDE_DIRS $ENV{WIRESHARK_INCLUDE_DIRS})
 ENDIF()
 include_directories (${WIRESHARK_INCLUDE_DIRS})
 
+IF(DEFINED WIRESHARK_LIB_DIR)
+link_directories (${WIRESHARK_LIB_DIR})
+ENDIF()
+
 IF(NOT DEFINED GCRYPT_INCLUDE_DIR)
 find_package(Gcrypt)
 ELSE()
@@ -60,7 +64,6 @@ include_directories (${GCRYPT_INCLUDE_DIR})
 
 set(LINK_MODE_LIB SHARED)
 set(LINK_MODE_MODULE MODULE)
-
 
 set(DISSECTOR_SRC
 	packet-whatsapp.c
@@ -101,7 +104,7 @@ set_target_properties(whatsapp PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 IF(DEFINED MANUAL_LINK)
 target_link_libraries(whatsapp)
 ELSE()
-target_link_libraries(whatsapp gcrypt)
+target_link_libraries(whatsapp wireshark gcrypt glib-2.0)
 ENDIF()
 
 install(TARGETS whatsapp
@@ -118,9 +121,24 @@ IF(DEFINED STATIC_GCC_BUILD)
  set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 ENDIF()
 
+if (WIN32)
+  if(MINGW)
+    message(STATUS "Compiling with MINGW!")
+    # Static link
+    set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -lpthread")
+  endif(MINGW)
+endif (WIN32)
+
+if (WIN32)
+add_custom_command(TARGET whatsapp
+ POST_BUILD
+ COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded whatsapp.dll
+)
+ELSE()
 add_custom_command(TARGET whatsapp
  POST_BUILD
  COMMAND ${CMAKE_STRIP} --strip-debug --strip-unneeded whatsapp.so
 )
+ENDIF()
 
 

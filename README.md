@@ -23,9 +23,12 @@ You need the wireshark headers, the glib-2.0 headers, the libcrypto headers (ins
 For Windows build:
 
 1. Create a build directory and move to it, for example "mkdir build; cd build"
-2. Generate Makefile 'LDFLAGS="/path/libglib-2.0-0.dll /path/libwireshark.dll" cmake -D GNU_HOST=i686-w64-mingw32 -D STATIC_GCC_BUILD=1 ..'. Be sure to properly set the cross-compiler prefix and specify the proper paths to the libraries.
-3. Now build the plugin "make"
-4. And the plugin should be built as "whatsapp.so", just copy it to the plugins folder "C:\Program Files\Wireshark\Plugins\'version'\whatsapp.dll"
+2. Tweak mingw32-windows.toolchain according to your needs.
+3. Generate Makefile "cmake -DCMAKE_TOOLCHAIN_FILE=../mingw32-windows.toolchain .." (set WIRESHARK_INCLUDE_DIRS, GCRYPT_INCLUDE_DIR variables if needed)
+4. Now build the plugin "make"
+5. And the plugin should be built as "whatsapp.dll", just copy it to the plugins folder "C:\Program Files\Wireshark\Plugins\'version'\whatsapp.dll"
+
+You will probably need libglib-2.0, libwireshark and libgcrypt to properly link the DLL.
 
 Windows builds are currently under test, report any bugs you find please.
 
