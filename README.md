@@ -8,7 +8,7 @@ Get a copy
 
 Ubuntu users may install the plugin using launchpad repo: https://launchpad.net/~wireshark-whatsapp/+archive/ppa
 
-Windows users may find a nightly build at: http://davidgf.net/nightly/wireshark-whatsapp/win32/
+Windows users may find releases at: https://www.gosell.it/product/whatsapp-dissector-for-wireshark-26
 
 Build and install
 -----------------
