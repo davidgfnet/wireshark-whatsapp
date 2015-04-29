@@ -7,9 +7,7 @@
  */
 
 
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include <openssl/hmac.h> 
+#include <gcrypt.h>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -85,6 +83,10 @@ std::string getDecoded12(int n) {
 	return std::string(strings_list12[n].strptr);
 }
 
+void SHA1(const unsigned char * in, int len, char unsigned  * out) {
+	gcry_md_hash_buffer(GCRY_MD_SHA1, out, in, len);
+}
+
 void HMAC_SHA1(const unsigned char *text, int text_len, const unsigned char *key, int key_len, unsigned char *digest) {
 	const int SHA1_BLOCK_SIZE = 64;
 	const int SHA1_DIGEST_LENGTH = 20;
@@ -135,13 +137,21 @@ const char hexmap[16]  = { '0','1','2','3','4','5','6','7','8','9','a','b','c','
 const char hexmap2[16] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
 class KeyGenerator {
 public:
+	static void MD5(const char * in, int len, char * out) {
+		gcry_md_hash_buffer(GCRY_MD_MD5, out, in, len);
+	}
+	static void PKCS5_PBKDF2_HMAC_SHA1 (const char *pass, int passlen, const unsigned char *salt,
+		int saltlen, int iter, int keylen, unsigned char *out) {
+
+		gcry_kdf_derive(pass, passlen, GCRY_KDF_PBKDF2, GCRY_MD_SHA1, salt, saltlen, iter, keylen, out);
+	}
 	static void generateKeyImei(const char * imei, const char * salt, int saltlen, char * out) {
 		char imeir[strlen(imei)];
 		for (int i = 0; i < strlen(imei); i++)
 			imeir[i] = imei[strlen(imei)-i-1];
 		
 		char hash[16];
-		MD5((unsigned char*)imeir,strlen(imei),(unsigned char*)hash);
+		MD5(imeir,strlen(imei),hash);
 		
 		// Convert to hex
 		char hashhex[32];
@@ -182,7 +192,7 @@ public:
 		}
 		
 		char hash[16];
-		MD5((unsigned char*)fmt_addr,34,(unsigned char*)hash);
+		MD5(fmt_addr,34,hash);
 		
 		// Convert to hex
 		char hashhex[32];
