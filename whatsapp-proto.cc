@@ -80,6 +80,7 @@ int * encoding_table[4][6] = {
 extern const value_string strings_list[];
 
 std::string getDecoded12(int n) {
+	if (n > 255) return "Invalid value!";
 	return std::string(strings_list12[n].strptr);
 }
 
@@ -656,13 +657,15 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 				if (dlist->find(packet_hmac) != dlist->end()) {
 					decomp_data = new DataBuffer((*dlist)[packet_hmac]);
 				}else{
-					// Deflate data
-					int osize = decoded_data->size()*2+64;
+					// Deflate data, completely arbitrary max size
+					const int osize = 512*1024;
 					char tmpbuf[osize];
 					size_t r = tinfl_decompress_mem_to_mem(tmpbuf, osize, decoded_data->getPtr(), decoded_data->size(), 1);
 
-					decomp_data = new DataBuffer(tmpbuf, r, decoded_data->version);
-					(*dlist)[packet_hmac] = new DataBuffer(decomp_data);
+					if (r < osize) {
+						decomp_data = new DataBuffer(tmpbuf, r, decoded_data->version);
+						(*dlist)[packet_hmac] = new DataBuffer(decomp_data);
+					}
 				}
 
 				guint8* decompressed_buffer = (guint8*)g_malloc(decomp_data->size());
