@@ -653,7 +653,7 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 			}
 
 			if (bflag & 4) {
-				DataBuffer * decomp_data;
+				DataBuffer * decomp_data = NULL;
 				if (dlist->find(packet_hmac) != dlist->end()) {
 					decomp_data = new DataBuffer((*dlist)[packet_hmac]);
 				}else{
@@ -668,19 +668,21 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 					}
 				}
 
-				guint8* decompressed_buffer = (guint8*)g_malloc(decomp_data->size());
-				memcpy(decompressed_buffer,decomp_data->getPtr(),decomp_data->size());
-				tvbuff_t * decomp_tvb = tvb_new_child_real_data(decoded_tvb, decompressed_buffer, decomp_data->size(), decomp_data->size());
-				tvb_set_free_cb(decomp_tvb, g_free);
-				add_new_data_source(pinfo, decomp_tvb, "Decompressed data");
+				if (decomp_data) {
+					guint8* decompressed_buffer = (guint8*)g_malloc(decomp_data->size());
+					memcpy(decompressed_buffer,decomp_data->getPtr(),decomp_data->size());
+					tvbuff_t * decomp_tvb = tvb_new_child_real_data(decoded_tvb, decompressed_buffer, decomp_data->size(), decomp_data->size());
+					tvb_set_free_cb(decomp_tvb, g_free);
+					add_new_data_source(pinfo, decomp_tvb, "Decompressed data");
 
-				ti = proto_tree_add_item (msg, whatsapp_msg_compressed_message,
-									decomp_tvb, 0, decomp_data->size(), ENC_NA);
-				msg = proto_item_add_subtree (ti, message_whatsapp);
+					ti = proto_tree_add_item (msg, whatsapp_msg_compressed_message,
+										decomp_tvb, 0, decomp_data->size(), ENC_NA);
+					msg = proto_item_add_subtree (ti, message_whatsapp);
 
-				// Call recursive
-				data->popData(bsize);     // Pop data for next parsing!
-				return read_tree(decomp_data,msg,decomp_tvb,pinfo);
+					// Call recursive
+					data->popData(bsize);     // Pop data for next parsing!
+					return read_tree(decomp_data,msg,decomp_tvb,pinfo);
+				}
 			}
 		
 			// Call recursive
