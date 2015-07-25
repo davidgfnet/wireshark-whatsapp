@@ -576,8 +576,10 @@ int DissectSession::dissect(const char * data, int len, proto_tree *tree, tvbuff
 }
 
 Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *tvb,packet_info *pinfo) {
-	int bflag = (data->getInt(1) & 0xF0)>>4;
+	int flag = data->getInt(1);
+	int bflag = (flag & 0xF0)>>4;
 	int bsize = data->getInt(2,1);
+	bsize |= ((flag & 0xF) << 16);
 	if (bsize > data->size()-3) {
 		return NULL;  // Next message incomplete, return consumed data
 	}
@@ -586,12 +588,12 @@ Tree * DissectSession::next_tree(DataBuffer * data,proto_tree *tree, tvbuff_t *t
 	if (tree) {
 		ti = proto_tree_add_item (tree, whatsapp_msg, tvb, data->curr(), bsize+3, ENC_NA);
 		msg = proto_item_add_subtree (ti, message_whatsapp);
-		proto_tree_add_item (msg, hf_whatsapp_message, tvb, data->curr()+1, 2, ENC_BIG_ENDIAN);
-		ti = proto_tree_add_item (msg, hf_whatsapp_attr_flags, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
+		proto_tree_add_uint (msg, hf_whatsapp_message, tvb, data->curr(), 3, bsize & 0xFFFFF);
+		ti = proto_tree_add_uint (msg, hf_whatsapp_attr_flags, tvb, data->curr(), 1, flag & 0xF0);
 
 		proto_tree * msgf = proto_item_add_subtree(ti, tree_msg_flags);
-		proto_tree_add_boolean (msgf, hf_whatsapp_attr_crypted, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
-		proto_tree_add_boolean (msgf, hf_whatsapp_attr_compressed, tvb, data->curr(), 1, ENC_LITTLE_ENDIAN);
+		proto_tree_add_bits_item (msgf, hf_whatsapp_attr_crypted, tvb, data->curr()*8, 1, ENC_LITTLE_ENDIAN);
+		proto_tree_add_bits_item (msgf, hf_whatsapp_attr_compressed, tvb, data->curr()*8+1, 1, ENC_LITTLE_ENDIAN);
 	}
 
 	data->popData(3);	
@@ -911,10 +913,11 @@ int whatsapp_data_length(const char * data, int len) {
 	
 		// Consume as many trees as possible
 		while (d->size() >= 3) {
-			int bflag = (d->getInt(1) & 0xF0)>>4;
+			int flag = d->getInt(1);
 			int bsize = d->getInt(2,1);
-			aclen += bsize+3;
-			if (d->size() < bsize+3) break; // Not enough data for the next packet
+			bsize |= ((flag & 0xF) << 16);
+			aclen += bsize + 3;
+			if (d->size() < bsize + 3) break; // Not enough data for the next packet
 			d->popData(bsize+3);
 		}
 
