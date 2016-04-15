@@ -3,6 +3,8 @@ wireshark-whatsapp
 
 Whatsapp dissector plugin for wireshark
 
+***Important*** I'm no longer working on this repo. This plugin works for protocol version 1.6 or older (check out the tags), with whatsapp protocol 2.0 it is probably necessary to perform MITM in order for a machine to capture the protocol data (since it uses an ephemeral shared secret calculated in a DH way) so this plugin becomes essentially useless. Still it is perfect as a base to implement 2.0 protocol.
+
 Get a copy
 ----------
 
