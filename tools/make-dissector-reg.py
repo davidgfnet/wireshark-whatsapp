@@ -59,7 +59,7 @@ elif registertype == "dissectors":
  */
 """
 else:
-	print "Unknown output type '%s'" % registertype
+	#print("Unknown output type '%s'",registertype)
 	sys.exit(1)
 
 
@@ -77,7 +77,7 @@ for file in files:
 		filenames.append(os.path.join(srcdir, file))
 
 if len(filenames) < 1:
-	print "No files found"
+	#print("No files found")
 	sys.exit(1)
 
 
@@ -130,7 +130,7 @@ for filename in filenames:
 	if cache and cache.has_key(filename):
 		cdict = cache[filename]
 		if cur_mtime == cdict['mtime']:
-#			print "Pulling %s from cache" % (filename)
+#			print("Pulling %s from cache" % (filename))
 			regs['proto_reg'].extend(cdict['proto_reg'])
 			regs['handoff_reg'].extend(cdict['handoff_reg'])
 			regs['wtap_register'].extend(cdict['wtap_register'])
@@ -165,7 +165,7 @@ if cache is not None and cache_filename is not None:
 
 # Make sure we actually processed something
 if len(regs['proto_reg']) < 1:
-	print "No protocol registrations found"
+	#print("No protocol registrations found")
 	sys.exit(1)
 
 # Sort the lists to make them pretty
@@ -252,7 +252,7 @@ register_wtap_module(void)
 		reg_code.write(line)
 
 	reg_code.write("}\n");
-        reg_code.write("#endif\n");
+	reg_code.write("#endif\n");
 else:
 	reg_code.write("""
 static gulong proto_reg_count(void)
