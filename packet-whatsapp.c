@@ -340,6 +340,7 @@ void proto_register_whatsapp(void) {
                             NULL,
                             waup_free_cb,
                             NULL,
+                            NULL,
                             wa_auth_uats_flds);
 
   prefs_register_uat_preference(whatsapp_module, "cfg",
